@@ -8,7 +8,7 @@ class CronManager {
             const task = new service();
             const job = new CronJob(task.cronExpression, () => {
                 console.log(`Init ${task.name} cron service`);
-                service.execute();
+                task.execute();
             });
             job.start();
         });
