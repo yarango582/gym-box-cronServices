@@ -1,14 +1,14 @@
 const { BaseService } = require('./base.service');
 const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
-const affiliatesModel = require('../models/affiliates.model');
 const { sendMail } = require('../utils/mailer');
 const { subjects } = require('../constants/subjects.constant');
 const logger = require('../utils/logger.util');
+const config = require('../config/config');
 
 class AffiliatesSuscriptionsService extends BaseService {
 
     constructor() {
-        super("AffiliatesSuscriptionsService", '0 0 * * *');
+        super("AffiliatesSuscriptionsService", config.services.affiliatesSuscriptions.cronTime);
     }
 
     async execute() {
