@@ -1,5 +1,6 @@
 const services = require('../services');
 const { CronJob } = require('cron');
+const logger = require('./logger.util');
 
 class CronManager {
 
@@ -7,7 +8,7 @@ class CronManager {
         services.forEach(service => {
             const task = new service();
             const job = new CronJob(task.cronExpression, () => {
-                console.log(`Init ${task.name} cron service`);
+                logger.info(`[${task.name}] - [executing]`);
                 task.execute();
             });
             job.start();

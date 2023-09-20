@@ -1,17 +1,17 @@
 const { BaseService } = require('./base.service');
 const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
-const AffiliatesModel = require('../models/affiliates.model');
+const affiliatesModel = require('../models/affiliates.model');
 const { sendMail } = require('../utils/mailer');
 const { subjects } = require('../constants/subjects.constant');
+const logger = require('../utils/logger.util');
 
 class AffiliatesSuscriptionsService extends BaseService {
 
     constructor() {
-        super("AffiliatesSuscriptionsService", '*/1 * * * *');
+        super("AffiliatesSuscriptionsService", '0 0 * * *');
     }
 
     async execute() {
-        console.log(`Executing ${this.name} cron service`);
         await this.deactivateSuscription();
         await this.subscriptionsThatWillBeDeactivated();
     }
@@ -21,58 +21,62 @@ class AffiliatesSuscriptionsService extends BaseService {
         // y  las desactivamos
         try {
             const today = new Date();
-            const suscriptions = await AffiliatesSuscriptionModel.find({ status: 'active' });
+            const suscriptionsWithAffiliates = await AffiliatesSuscriptionModel.find({ activo: true })
+                .populate('idAfiliado');
+
             const suscriptionsToDeactivate = [];
-            suscriptions.forEach(suscription => {
-                const date = new Date(suscription.date);
+            suscriptionsWithAffiliates.forEach(suscription => {
+                const date = new Date(suscription.fechaDePago);
                 const diffTime = Math.abs(today.getTime() - date.getTime());
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays > 30) {
+                if (diffDays > 31) {
                     suscription.activo = false;
                     suscription.save();
                     suscriptionsToDeactivate.push(suscription);
                 }
             });
-            if(suscriptionsToDeactivate.length > 0) {
-                const affiliates = await AffiliatesModel.find();
-                const tableRows = suscriptionsToDeactivate.map(suscription => {
-                    const affiliate = affiliates.find(affiliate => affiliate._id === suscription.affiliateId);
+            if (suscriptionsToDeactivate.length > 0) {
+                const tableRows = suscriptionsToDeactivate.map((suscription) => {
                     return `
                         <tr>
-                            <td>${affiliate.nombreCompleto}</td>
-                            <td>${affiliate.numeroDocumento}</td>
-                            <td>${affiliate.celular}</td>
+                            <td>${suscription.idAfiliado.nombreCompleto}</td>
+                            <td>${suscription.idAfiliado.numeroDocumento}</td>
+                            <td>${suscription.idAfiliado.celular}</td>
                             <td>${suscription.fechaDePago}</td>
                         </tr>
                     `;
                 }).join('');
                 const html = `
-                    <h1>Notificación de pago</h1>
-                    <p>Estimado/a:</p>
-                    <p>Le informamos que las siguientes suscripciones han sido desactivadas por falta de pago.</p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nombre completo</th>
-                                <th>Número de documento</th>
-                                <th>Celular</th>
-                                <th>Fecha de pago</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRows}
-                        </tbody>
-                    </table>
-                    <p>Saludos cordiales,</p>
-                    <p>Equipo de soporte de la plataforma de afiliados.</p>
-                    <p>GYM BOX 360</p>
-                `;
+                <div style="background-color: #f5f5f5; padding: 20px;">
+                    <div style="background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+                        <h1 style="color: #001529; font-size: 36px; margin-bottom: 20px;">Notificación de pago</h1>
+                        <p style="font-size: 18px; margin-bottom: 20px;">Estimado/a:</p>
+                        <p style="font-size: 18px; margin-bottom: 20px;">Le informamos que las siguientes suscripciones han sido desactivadas por falta de pago.</p>
+                        <table style="border-collapse: collapse; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Nombre completo</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Número de documento</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Celular</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Fecha de último pago</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                        <p style="font-size: 18px; margin-top: 20px;">Saludos cordiales,</p>
+                        <p style="font-size: 18px;">Equipo de soporte de la plataforma de afiliados.</p>
+                        <p style="font-size: 18px;">GYM BOX 360</p>
+                    </div>
+                </div>
+            `;
                 sendMail(subjects.DEACTIVE_SUSCRIPTION, html);
                 return;
             }
-            console.log('No hay suscripciones para desactivar');
+            logger.info('No hay suscripciones para desactivar');
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     }
 
@@ -80,56 +84,60 @@ class AffiliatesSuscriptionsService extends BaseService {
         // buscamos todas las suscripciones que esten activas y que les falte 3 dias para el pago y enviamos email
         try {
             const today = new Date();
-            const suscriptions = await AffiliatesSuscriptionModel.find({ activo: true });
+            const suscriptions = await AffiliatesSuscriptionModel.find({ activo: true })
+                .populate('idAfiliado');
+
             const suscriptionsToNotify = [];
             suscriptions.forEach(suscription => {
-                const date = new Date(suscription.date);
+                const date = new Date(suscription.fechaDePago);
                 const diffTime = Math.abs(today.getTime() - date.getTime());
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays === 27) {
+                if (diffDays === 28) {
                     suscriptionsToNotify.push(suscription);
                 }
             });
             if (suscriptionsToNotify.length > 0) {
-                const affiliates = await AffiliatesModel.find();
                 const tableRows = suscriptionsToNotify.map(suscription => {
-                    const affiliate = affiliates.find(affiliate => affiliate._id === suscription.affiliateId);
                     return `
                         <tr>
-                            <td>${affiliate.nombreCompleto}</td>
-                            <td>${affiliate.numeroDocumento}</td>
-                            <td>${affiliate.celular}</td>
+                            <td>${suscription.idAfiliado.nombreCompleto}</td>
+                            <td>${suscription.idAfiliado.numeroDocumento}</td>
+                            <td>${suscription.idAfiliado.celular}</td>
                             <td>${suscription.fechaDePago}</td>
                         </tr>
                     `;
                 }).join('');
                 const html = `
-                    <h1>Notificación de pago</h1>
-                    <p>Estimado/a:</p>
-                    <p>Le informamos que las siguientes suscripciones vencerán en 3 días. Por favor, realice el pago correspondiente para continuar con el servicio.</p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nombre completo</th>
-                                <th>Número de documento</th>
-                                <th>Celular</th>
-                                <th>Fecha de pago</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRows}
-                        </tbody>
-                    </table>
-                    <p>Saludos cordiales,</p>
-                    <p>Equipo de soporte de la plataforma de afiliados.</p>
-                    <p>GYM BOX 360</p>
-                `;
+                <div style="background-color: #f5f5f5; padding: 20px;">
+                    <div style="background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+                        <h1 style="color: #001529; font-size: 36px; margin-bottom: 20px;">Notificación de pago</h1>
+                        <p style="font-size: 18px; margin-bottom: 20px;">Estimado/a:</p>
+                        <p style="font-size: 18px; margin-bottom: 20px;">Le informamos que las siguientes suscripciones vencerán en 3 días. Por favor, realice el pago correspondiente para continuar con el servicio.</p>
+                        <table style="border-collapse: collapse; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Nombre completo</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Número de documento</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Celular</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Fecha de pago</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                        <p style="font-size: 18px; margin-top: 20px;">Saludos cordiales,</p>
+                        <p style="font-size: 18px;">Equipo de soporte de la plataforma de afiliados.</p>
+                        <p style="font-size: 18px;">GYM BOX 360</p>
+                    </div>
+                </div>
+            `;
                 sendMail(subjects.PAYMENT_NOTIFICATION, html);
                 return;
             }
-            console.log('No hay suscripciones para notificar');
+            logger.info('No hay suscripciones para notificar');
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     }
 }
