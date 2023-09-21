@@ -1,9 +1,8 @@
 const { BaseService } = require('./base.service');
-const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
 const { sendMail } = require('../utils/mailer');
 const { subjects } = require('../constants/subjects.constant');
-const logger = require('../utils/logger.util');
 const config = require('../config/config');
+const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
 
 class AffiliatesSuscriptionsService extends BaseService {
 
@@ -21,6 +20,7 @@ class AffiliatesSuscriptionsService extends BaseService {
         // y  las desactivamos
         try {
             const today = new Date();
+
             const suscriptionsWithAffiliates = await AffiliatesSuscriptionModel.find({ activo: true })
                 .populate('idAfiliado');
 
@@ -74,9 +74,9 @@ class AffiliatesSuscriptionsService extends BaseService {
                 sendMail(subjects.DEACTIVE_SUSCRIPTION, html);
                 return;
             }
-            logger.info('No hay suscripciones para desactivar');
+            console.info('No hay suscripciones para desactivar');
         } catch (error) {
-            logger.error(error);
+            console.error(error);
         }
     }
 
@@ -135,9 +135,9 @@ class AffiliatesSuscriptionsService extends BaseService {
                 sendMail(subjects.PAYMENT_NOTIFICATION, html);
                 return;
             }
-            logger.info('No hay suscripciones para notificar');
+            console.info('No hay suscripciones para notificar');
         } catch (error) {
-            logger.error(error);
+            console.error(error);
         }
     }
 }

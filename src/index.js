@@ -13,13 +13,10 @@ app.use(cors());
 
 app.listen(config.port, async () => {
     try {
-        const dbConnection = await db;
-        if (dbConnection) {
-            logger.info('Database connected');
-            await CronManager.execute();
-        }
-       logger.info(`Server running on port ${config.port}`);
+        await CronManager.execute();
+        await db;
+       console.info(`Server running on port ${config.port}`);
     } catch (error) {
-        logger.error(error);
+        console.error(error);
     }
 });
