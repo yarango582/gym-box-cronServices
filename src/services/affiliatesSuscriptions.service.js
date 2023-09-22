@@ -3,6 +3,7 @@ const { sendMail } = require('../utils/mailer');
 const { subjects } = require('../constants/subjects.constant');
 const config = require('../config/config');
 const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
+const moment = require('moment');
 
 class AffiliatesSuscriptionsService extends BaseService {
 
@@ -42,7 +43,8 @@ class AffiliatesSuscriptionsService extends BaseService {
                             <td>${suscription.idAfiliado.nombreCompleto}</td>
                             <td>${suscription.idAfiliado.numeroDocumento}</td>
                             <td>${suscription.idAfiliado.celular}</td>
-                            <td>${suscription.fechaDePago}</td>
+                            <td>${moment(suscription.fechaDePago).format("YYYY-mm-DD")}</td>
+                            <td>${suscription.idAfiliado.sede}</td>
                         </tr>
                     `;
                 }).join('');
@@ -59,6 +61,7 @@ class AffiliatesSuscriptionsService extends BaseService {
                                     <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Número de documento</th>
                                     <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Celular</th>
                                     <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Fecha de último pago</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Sede</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -103,7 +106,8 @@ class AffiliatesSuscriptionsService extends BaseService {
                             <td>${suscription.idAfiliado.nombreCompleto}</td>
                             <td>${suscription.idAfiliado.numeroDocumento}</td>
                             <td>${suscription.idAfiliado.celular}</td>
-                            <td>${suscription.fechaDePago}</td>
+                            <td>${moment(suscription.fechaDePago).format("YYYY-mm-DD")}</td>
+                            <td>${suscription.idAfiliado.sede}</td>
                         </tr>
                     `;
                 }).join('');
@@ -119,7 +123,8 @@ class AffiliatesSuscriptionsService extends BaseService {
                                     <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Nombre completo</th>
                                     <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Número de documento</th>
                                     <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Celular</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Fecha de pago</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Fecha de último pago</th>
+                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Sede</th>
                                 </tr>
                             </thead>
                             <tbody>
