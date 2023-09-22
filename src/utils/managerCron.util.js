@@ -10,7 +10,7 @@ class CronManager {
             const job = new CronJob(task.cronExpression, () => {
                 logger.info(`[${task.name}] - [executing]`);
                 task.execute();
-            });
+            },null, false, 'America/Bogota');
             job.start();
         });
     }

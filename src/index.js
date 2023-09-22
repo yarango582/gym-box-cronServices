@@ -3,7 +3,6 @@ const config = require('./config/config');
 const db = require('./db/db');
 const cors = require('cors');
 const { CronManager } = require('./utils/managerCron.util');
-const logger = require('./utils/logger.util');
 
 const app = express();
 
