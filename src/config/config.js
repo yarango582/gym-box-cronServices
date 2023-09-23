@@ -10,6 +10,15 @@ const config = {
         affiliatesSuscriptions: {
             cronTime: process.env.AFFILIATES_SUSCRIPTIONS_CRON_TIME || '0 0 * * *',
         }
+    },
+
+    twilio: {
+        numberFrom: process.env.TWILIO_NUMBER_FROM,
+        accountSid: process.env.TWILIO_ACCOUNT_SID,
+        authToken: process.env.TWILIO_AUTH_TOKEN,
+        templates: {
+            paymentReminder: process.env.TWILIO_TEMPLATE_PAYMENT_REMINDER,
+        }
     }
 }
 

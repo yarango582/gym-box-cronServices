@@ -1,10 +1,11 @@
 const { BaseService } = require('./base.service');
 const { sendMail } = require('../utils/mailer');
+const { sendWhatsAppMessage } = require('../utils/twilio/sender.util');
 const { subjects } = require('../constants/subjects.constant');
 const config = require('../config/config');
 const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
-const moment = require('moment');
-
+const { deactivateSuscriptionTemplate, subscriptionsThatWillBeDeactivatedTemplate } = require('../templates/email');
+const { deactivateSuscriptionWppTemplate } = require('../templates/wpp');
 class AffiliatesSuscriptionsService extends BaseService {
 
     constructor() {
@@ -43,38 +44,23 @@ class AffiliatesSuscriptionsService extends BaseService {
                             <td>${suscription.idAfiliado.nombreCompleto}</td>
                             <td>${suscription.idAfiliado.numeroDocumento}</td>
                             <td>${suscription.idAfiliado.celular}</td>
-                            <td>${moment(suscription.fechaDePago).format("YYYY-mm-DD")}</td>
+                            <td>${new Date(suscription.fechaDePago).toISOString().slice(0, 10)}</td>
                             <td>${suscription.idAfiliado.sede}</td>
                         </tr>
                     `;
                 }).join('');
-                const html = `
-                <div style="background-color: #f5f5f5; padding: 20px;">
-                    <div style="background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
-                        <h1 style="color: #001529; font-size: 36px; margin-bottom: 20px;">Notificación de pago</h1>
-                        <p style="font-size: 18px; margin-bottom: 20px;">Estimado/a:</p>
-                        <p style="font-size: 18px; margin-bottom: 20px;">Le informamos que las siguientes suscripciones han sido desactivadas por falta de pago.</p>
-                        <table style="border-collapse: collapse; width: 100%;">
-                            <thead>
-                                <tr>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Nombre completo</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Número de documento</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Celular</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Fecha de último pago</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Sede</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableRows}
-                            </tbody>
-                        </table>
-                        <p style="font-size: 18px; margin-top: 20px;">Saludos cordiales,</p>
-                        <p style="font-size: 18px;">Equipo de soporte de la plataforma de afiliados.</p>
-                        <p style="font-size: 18px;">GYM BOX 360</p>
-                    </div>
-                </div>
-            `;
+                const html = deactivateSuscriptionTemplate(tableRows);
                 sendMail(subjects.DEACTIVE_SUSCRIPTION, html);
+
+                // send message to wpp
+                suscriptionsToDeactivate.forEach(suscription => {
+                    const affiliateName = suscription.idAfiliado.nombreCompleto;
+                    const sede = suscription.idAfiliado.sede;
+                    const body = deactivateSuscriptionWppTemplate({ affiliateName, sede });
+                    sendWhatsAppMessage("3212953646", body)
+                        .then(message => console.info(message.sid))
+                        .catch(error => console.error(error));
+                });
                 return;
             }
             console.info('No hay suscripciones para desactivar');
@@ -106,37 +92,12 @@ class AffiliatesSuscriptionsService extends BaseService {
                             <td>${suscription.idAfiliado.nombreCompleto}</td>
                             <td>${suscription.idAfiliado.numeroDocumento}</td>
                             <td>${suscription.idAfiliado.celular}</td>
-                            <td>${moment(suscription.fechaDePago).format("YYYY-mm-DD")}</td>
+                            <td>${new Date(suscription.fechaDePago).toISOString().slice(0, 10)}</td>
                             <td>${suscription.idAfiliado.sede}</td>
                         </tr>
                     `;
                 }).join('');
-                const html = `
-                <div style="background-color: #f5f5f5; padding: 20px;">
-                    <div style="background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
-                        <h1 style="color: #001529; font-size: 36px; margin-bottom: 20px;">Notificación de pago</h1>
-                        <p style="font-size: 18px; margin-bottom: 20px;">Estimado/a:</p>
-                        <p style="font-size: 18px; margin-bottom: 20px;">Le informamos que las siguientes suscripciones vencerán en 3 días. Por favor, realice el pago correspondiente para continuar con el servicio.</p>
-                        <table style="border-collapse: collapse; width: 100%;">
-                            <thead>
-                                <tr>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Nombre completo</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Número de documento</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Celular</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Fecha de último pago</th>
-                                    <th style="background-color: #001529; color: #fff; font-size: 18px; padding: 10px; text-align: left;">Sede</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableRows}
-                            </tbody>
-                        </table>
-                        <p style="font-size: 18px; margin-top: 20px;">Saludos cordiales,</p>
-                        <p style="font-size: 18px;">Equipo de soporte de la plataforma de afiliados.</p>
-                        <p style="font-size: 18px;">GYM BOX 360</p>
-                    </div>
-                </div>
-            `;
+                const html = subscriptionsThatWillBeDeactivatedTemplate(tableRows);
                 sendMail(subjects.PAYMENT_NOTIFICATION, html);
                 return;
             }
