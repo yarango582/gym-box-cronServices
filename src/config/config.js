@@ -13,11 +13,11 @@ const config = {
     },
 
     twilio: {
-        numberFrom: process.env.TWILIO_NUMBER_FROM,
-        accountSid: process.env.TWILIO_ACCOUNT_SID,
-        authToken: process.env.TWILIO_AUTH_TOKEN,
+        numberFrom: process.env.TWILIO_NUMBER_FROM || 'whatsapp:+000000',
+        accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+        authToken: process.env.TWILIO_AUTH_TOKEN || '',
         templates: {
-            paymentReminder: process.env.TWILIO_TEMPLATE_PAYMENT_REMINDER,
+            paymentReminder: process.env.TWILIO_TEMPLATE_PAYMENT_REMINDER || 'paymentReminder',
         }
     }
 }
