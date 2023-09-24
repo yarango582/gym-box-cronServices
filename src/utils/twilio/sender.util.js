@@ -6,7 +6,7 @@ const sendWhatsAppMessage = async (to, body) => {
 
     client.messages.create({
         body,
-        from: numberFrom,
+        from: `whatsapp:${numberFrom}`,
         to: `whatsapp:+57${to}`
     })
     .then(message => message.id)
