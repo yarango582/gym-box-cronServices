@@ -1,6 +1,6 @@
 const { BaseService } = require('./base.service');
 const { sendMail } = require('../utils/mailer');
-const { sendWhatsAppMessage } = require('../utils/twilio/sender.util');
+const { sendSMS } = require('../utils/twilio/sender.util');
 const { subjects } = require('../constants/subjects.constant');
 const config = require('../config/config');
 const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
@@ -52,18 +52,21 @@ class AffiliatesSuscriptionsService extends BaseService {
                 const html = deactivateSuscriptionTemplate(tableRows);
                 sendMail(subjects.DEACTIVE_SUSCRIPTION, html);
 
-                // send message to wpp
+                // send message to sms
                 suscriptionsToDeactivate.forEach(suscription => {
                     const affiliateName = suscription.idAfiliado.nombreCompleto;
+                    const firtsName = affiliateName.split(' ')[0];
+                    const { celular } = suscription.idAfiliado;
                     const sede = suscription.idAfiliado.sede;
-                    const body = deactivateSuscriptionWppTemplate({ affiliateName, sede });
-                    sendWhatsAppMessage("3212953646", body)
-                        .then(message => console.info(message.sid))
+                    const body = deactivateSuscriptionWppTemplate({ affiliateName: firtsName, sede });
+                    console.log(body.length);
+                    sendSMS(celular, body)
+                        .then(() => console.info(`Mensaje enviado a ${celular}`))
                         .catch(error => console.error(error));
                 });
-                return;
             }
             console.info('No hay suscripciones para desactivar');
+            return;
         } catch (error) {
             console.error(error);
         }
