@@ -6,6 +6,7 @@ const config = require('../config/config');
 const AffiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
 const { deactivateSuscriptionTemplate, subscriptionsThatWillBeDeactivatedTemplate } = require('../templates/email');
 const { deactivateSuscriptionWppTemplate } = require('../templates/wpp');
+const moment = require('moment');
 class AffiliatesSuscriptionsService extends BaseService {
 
     constructor() {
@@ -29,9 +30,8 @@ class AffiliatesSuscriptionsService extends BaseService {
             const suscriptionsToDeactivate = [];
             suscriptionsWithAffiliates.forEach(suscription => {
                 const date = new Date(suscription.fechaDePago);
-                const diffTime = Math.abs(today.getTime() - date.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays > 31) {
+                const dateOfPayment = moment(date).add(suscription.mesesPagados, 'months').toDate();
+                if (today >= dateOfPayment) {
                     suscription.activo = false;
                     suscription.save();
                     suscriptionsToDeactivate.push(suscription);
@@ -82,9 +82,9 @@ class AffiliatesSuscriptionsService extends BaseService {
             const suscriptionsToNotify = [];
             suscriptions.forEach(suscription => {
                 const date = new Date(suscription.fechaDePago);
-                const diffTime = Math.abs(today.getTime() - date.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays === 28) {
+                const dateOfPayment = moment(date).add(suscription.mesesPagados, 'months').toDate();
+                const threeDaysBefore = moment(dateOfPayment).subtract(3, 'days').toDate();
+                if (today >= threeDaysBefore) {
                     suscriptionsToNotify.push(suscription);
                 }
             });
