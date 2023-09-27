@@ -75,7 +75,8 @@ class AffiliatesSuscriptionsService extends BaseService {
     async subscriptionsThatWillBeDeactivated() {
         // buscamos todas las suscripciones que esten activas y que les falte 3 dias para el pago y enviamos email
         try {
-            const today = new Date();
+            const today = moment(new Date()).format('YYYY-DD-MM');
+
             const suscriptions = await AffiliatesSuscriptionModel.find({ activo: true })
                 .populate('idAfiliado');
 
@@ -83,7 +84,7 @@ class AffiliatesSuscriptionsService extends BaseService {
             suscriptions.forEach(suscription => {
                 const date = new Date(suscription.fechaDePago);
                 const dateOfPayment = moment(date).add(suscription.mesesPagados, 'months').toDate();
-                const threeDaysBefore = moment(dateOfPayment).subtract(3, 'days').toDate();
+                const threeDaysBefore = moment(dateOfPayment).subtract(3, 'days').format('YYYY-DD-MM');
                 if (today === threeDaysBefore) {
                     suscriptionsToNotify.push(suscription);
                 }
