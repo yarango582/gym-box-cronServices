@@ -84,7 +84,7 @@ class AffiliatesSuscriptionsService extends BaseService {
                 const date = new Date(suscription.fechaDePago);
                 const dateOfPayment = moment(date).add(suscription.mesesPagados, 'months').toDate();
                 const threeDaysBefore = moment(dateOfPayment).subtract(3, 'days').toDate();
-                if (today >= threeDaysBefore) {
+                if (today === threeDaysBefore) {
                     suscriptionsToNotify.push(suscription);
                 }
             });
