@@ -51,19 +51,6 @@ class AffiliatesSuscriptionsService extends BaseService {
                 }).join('');
                 const html = deactivateSuscriptionTemplate(tableRows);
                 sendMail(subjects.DEACTIVE_SUSCRIPTION, html);
-
-                // send message to sms
-                suscriptionsToDeactivate.forEach(suscription => {
-                    const affiliateName = suscription.idAfiliado.nombreCompleto;
-                    const firtsName = affiliateName.split(' ')[0];
-                    const { celular } = suscription.idAfiliado;
-                    const sede = suscription.idAfiliado.sede;
-                    const body = deactivateSuscriptionWppTemplate({ affiliateName: firtsName, sede });
-                    console.log(body.length);
-                    sendSMS(celular, body)
-                        .then(() => console.info(`Mensaje enviado a ${celular}`))
-                        .catch(error => console.error(error));
-                });
             }
             console.info('No hay suscripciones para desactivar');
             return;
